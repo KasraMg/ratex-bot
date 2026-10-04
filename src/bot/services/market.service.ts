@@ -1,3 +1,5 @@
+import { getRedis } from "../../services/redis.service.js";
+
 export type Assest = {
   businessTime: string;
   code: string;
@@ -9,10 +11,21 @@ export type Assest = {
   value: number;
 };
 
+const CACHE_KEY = "market:assets";
+const CACHE_TTL = 3600;
+
 export async function getAssets() {
-  const response = await fetch(process.env.servixUrl!, {
+  const redis = await getRedis();
+
+  const cached = await redis.get(CACHE_KEY);
+
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  const response = await fetch(process.env.SERVIX_URL!, {
     headers: {
-      "X-API-Key": process.env.servixKey!,
+      "X-API-Key": process.env.SERVIX_KEY!,
     },
   });
 
@@ -20,5 +33,9 @@ export async function getAssets() {
     throw new Error("Failed to fetch market data");
   }
 
-  return response.json();
+  const data = await response.json();
+
+  await redis.setEx(CACHE_KEY, CACHE_TTL, JSON.stringify(data));
+
+  return data;
 }
