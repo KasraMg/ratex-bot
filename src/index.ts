@@ -12,10 +12,15 @@ import {
   converterAmountHandler,
 } from "./bot/callbacks/converter.js";
 import { SessionData } from "./bot/types/session.js";
+import { getRedis } from "./services/redis.service.js";
 
 type MyContext = Context & SessionFlavor<SessionData>;
 
 const bot = new Bot<MyContext>(process.env.BOT_TOKEN!);
+
+await getRedis();
+
+console.log("Redis connected...");
 
 await bot.api.setMyCommands([
   {
